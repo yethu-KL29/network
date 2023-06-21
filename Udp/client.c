@@ -6,47 +6,37 @@
 #include <sys/types.h>
 #include <string.h>
 #include <netinet/in.h>
-
-int main(int argc, char argv[])
+#include <errno.h>
+#include <time.h>
+int main(int argc, char *argv[])
 {
     int n, s, t;
-    struct sockaddr_in server, local;
+    struct sockaddr_in servaddr;
     char buffer[1024];
     if (argc < 3)
     {
-        printf("usage:server<server-addr><port>");
+        printf("usage:client<server-addr><port>");
         exit(0);
     }
-    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) ==-1)
+    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
     {
         perror("error in socket creation");
         exit(0);
     }
-    memset(&local, 0, sizeof(local));
-    local.sin_family = AF_INET;
-    local.sin_port = htons(6677);
-    local.sin_addr.s_addr = inet_addr(argv[1]);
-
-    if (bind(s, (struct sockaddr *)&local, sizeof(local)) == -1)
-    {
-        perror("bind error");
-        exit(1);
-    }
-    memset(&server, 0, sizeof(server));
-    server.sin_family = AF_INET;
-    server.sin_port = htons((short)atoi(argv[2]));
-    server.sin_addr.s_addr = inet_addr(argv[1]);
-
-
+   
+    memset((char *)&servaddr, 0, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons((short)atoi(argv[2]));
+    servaddr.sin_addr.s_addr = inet_addr(argv[1]);
     strcpy(buffer, "TIME");
-    if (sendto(s, buffer, sizeof(buffer), 0, (struct sockaddr *)&server, sizeof(server)) < 0)
+    if (sendto(s, buffer, sizeof(buffer), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
     {
         perror("error in sendto");
         exit(0);
     }
-    t = sizeof(server);
+    t = sizeof(servaddr);
     printf("the current time is:");
-    if ((n = recvfrom(s, buffer, 1024, 0, (struct sockaddr*)&server, &t)) > 0)
+    if ((n = recvfrom(s, buffer, 1024, 0, (struct sockaddr *)&servaddr, &t)) > 0)
     {
         buffer[n] = '\0';
         fputs(buffer, stdout);
